@@ -201,7 +201,7 @@ if __name__ == "__main__":
     smooth_time_values = np.linspace(time_values[0], time_values[-1], 100)  # 更多数据点以实现平滑曲线
     smooth_first_column = interpolated_function(smooth_time_values)
 
-    # 创建平滑曲线图
+    # 创建曲线图
     plt.figure(figsize=(8, 6))
     plt.plot(time_values, x_column, linestyle='-', color='b', label='Original Data')  # 绘制原始曲线
     plt.plot(smooth_time_values, smooth_first_column, color='r', label='Smooth Curve')  #绘制平滑曲线

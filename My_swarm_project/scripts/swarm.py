@@ -169,9 +169,10 @@ def swarm_controller(dt = INTERV_TIME):
 
 def goTrajactory(kuads, pub, traj_file):
     ctrl_waypoints = read_waypoint_data(traj_file)
-    
+    data = np.loadtxt(traj_file, dtype=np.float32)
+
     #绘制曲线图形
-    x_column = ctrl_waypoints[:, 3]#提取第一列数据
+    x_column = data[:, 3]#提取第一列数据
 
     # 计算时间值
     time_interval = 0.05  # 时间间隔为0.05秒
@@ -196,15 +197,16 @@ def goTrajactory(kuads, pub, traj_file):
                 kuads[agent_number].takeoff()
             except IndexError as e:
                 pass
-        kuadmini_1.takeoff()#跟随机同样起飞  
+        # kuadmini_1.takeoff()#跟随机同样起飞  
         time.sleep(0.1)
 
     print("\rtrajactory!")
     for tt in range(ctrl_waypoints[0].shape[0]):#领航机开始跟随期望轨迹飞行，
+        # print(ctrl_waypoints[0].shape[0])
         if rospy.is_shutdown():
             break
-        a = swarm_controller(dt = 0.05)#编队控制器
-        kuadmini_1.goto(follower1_mc_x + a[0], follower1_mc_y + a[1], ctrl_waypoints[1][tt][2])
+        # a = swarm_controller(dt = 0.05)#编队控制器
+        # kuadmini_1.goto(follower1_mc_x + a[0], follower1_mc_y + a[1], ctrl_waypoints[1][tt][2])
         for agent_number in range(number):
             try:
                 kuads[agent_number].goto(ctrl_waypoints[agent_number][tt][0], ctrl_waypoints[agent_number][tt][1], ctrl_waypoints[agent_number][tt][2])
@@ -230,26 +232,27 @@ if __name__ == "__main__":
     addr_kuadmini1=('192.168.0.161',1000) # 直连地址
     addr_kuadmini2=('192.168.0.162',1000) # 直连地址
     addr_kuadmini3=('192.168.0.163',1000) # 直连地址
+    addr_kuadmini4=('192.168.0.164',1000) # 直连地址
     addr_vofa=('127.0.0.1',1347)
     addr_kground=('127.0.0.1',2001) # 通过上位机转发
     rospy.init_node('kuadmini_swarm', anonymous=False, disable_signals=True)
 
     # 订阅领航机动捕话题
-    rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(leader_number),PoseStamped,leader_posi_cb)
+    # rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(leader_number),PoseStamped,leader_posi_cb)
     # 订阅跟随机1动捕话题
-    rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
+    # rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
 
-    kuadmini_0 = Kuadmini(addr_kuadmini0, number=1, use_tcp=1)
-    kuadmini_1 = Kuadmini(addr_kuadmini1, number=2, use_tcp=1)
+    kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
+    # kuadmini_1 = Kuadmini(addr_kuadmini1, number=1, use_tcp=1)
     # kuadmini_2 = Kuadmini(addr_kuadmini2, number=2, use_tcp=1)
     # kuadmini_3 = Kuadmini(addr_kuadmini3, number=3, use_tcp=1)
-    # kuadmini_k = Kuadmini(addr_kground, number=2, use_tcp=1)
+    # kuadmini_k = Kuadmini(addr_kground, number=0, use_tcp=1)
 
     pub = rospy.Publisher("traj_show", Marker, queue_size=10)
 
-    # goHover(kuadmini_0)# kuadmini_0, kuadmini_1, kuadmini_2,
+    # goHover(kuadmini_k)# kuadmini_0, kuadmini_1, kuadmini_2,
     # goSwings((kuadmini_0,))
-    goTrajactory((kuadmini_0), pub, "line.txt")
+    goTrajactory((kuadmini_0,), pub, "line1.txt")
 
     while not rospy.is_shutdown():
         time.sleep(1)
