@@ -140,43 +140,43 @@ def swarm_controller(dt = INTERV_TIME):
     global old_fol1_err_x,old_fol1_err_y
     global  fol1_err_x, fol1_err_y
     kp,ki,kd = 1.0,0.0,0.0#PID参数确定
-    d_x,d_y = -0.3,-0.3#期望编队距离参数确定
+    d_x,d_y = 0.5,0.5#期望编队距离参数确定
 
     #计算领航与跟随机1实际距离
     r_x =  leader_mc_x - follower1_mc_x
-    r_y =  leader_mc_y - follower1_mc_y
+    # r_y =  leader_mc_y - follower1_mc_y
 
     #计算距离误差
     fol1_err_x = d_x - r_x
-    fol1_err_y = d_y - r_y
+    # fol1_err_y = d_y - r_y
     #计算距离误差微分
     fol1_err_x_d = kd * (fol1_err_x - old_fol1_err_x) / dt
-    fol1_err_y_d = kd * (fol1_err_y - old_fol1_err_y) / dt
+    # fol1_err_y_d = kd * (fol1_err_y - old_fol1_err_y) / dt
 
     #计算距离误差积分
     fol1_err_x_i = ki * fol1_err_x * dt
-    fol1_err_y_i = ki * fol1_err_y * dt
+    # fol1_err_y_i = ki * fol1_err_y * dt
 
     #控制器实际输出
     out_x = kp * (fol1_err_x + fol1_err_x_i + fol1_err_x_d)
-    out_y = kp * (fol1_err_y + fol1_err_y_i + fol1_err_y_d)
+    # out_y = kp * (fol1_err_y + fol1_err_y_i + fol1_err_y_d)
 
     old_fol1_err_x = fol1_err_x
-    old_fol1_err_y = fol1_err_y
+    # old_fol1_err_y = fol1_err_y
 
-    return out_x,out_y
+    return out_x
 
 
 
 def goTrajactory(kuads, pub, traj_file):
     ctrl_waypoints = read_waypoint_data(traj_file)
     data = np.loadtxt(traj_file, dtype=np.float32)
-    fol1_data_x = np.zeros((ctrl_waypoints[0].shape[0], 1))#跟随机X实际位置
-    fol1_data_d_x = np.zeros((ctrl_waypoints[0].shape[0], 1))#跟随机X期望位置
-    fol1_data_x_err = np.zeros((ctrl_waypoints[0].shape[0], 1))#编队控制器X误差
-    fol1_data_y = np.zeros((ctrl_waypoints[0].shape[0], 1))
-    fol1_data_d_y = np.zeros((ctrl_waypoints[0].shape[0], 1))
-    fol1_data_y_err = np.zeros((ctrl_waypoints[0].shape[0], 1))
+    fol1_data_x = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)#跟随机X实际位置
+    fol1_data_d_x = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)#跟随机X期望位置
+    fol1_data_x_err = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)#编队控制器X误差
+    fol1_data_y = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)
+    fol1_data_d_y = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)
+    fol1_data_y_err = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)
     
     #绘制曲线图形
     x_column = data[:, 3]#提取第一列数据
@@ -184,7 +184,8 @@ def goTrajactory(kuads, pub, traj_file):
     time_interval = 0.05  # 时间间隔为0.05秒
     time_values = np.arange(0, len(x_column) * time_interval, time_interval)
 
-    number = len(ctrl_waypoints)
+    # number = len(ctrl_waypoints)
+    number = 1
     time.sleep(0.2)
     print("\ntake off!")
     for tt in range(15):
@@ -201,17 +202,17 @@ def goTrajactory(kuads, pub, traj_file):
         # print(ctrl_waypoints[0].shape[0])
         if rospy.is_shutdown():
             break
-        fol1_data_x[tt, 0] = follower1_mc_x
-        fol1_data_d_x[tt, 0] = follower1_mc_x + a[0]
-        fol1_data_x_err[tt, 0] = old_fol1_err_x
-        fol1_data_y[tt, 0] = follower1_mc_y
-        fol1_data_d_y[tt, 0] = follower1_mc_y + a[1]
-        fol1_data_y_err[tt, 0] = old_fol1_err_y
-        print(follower1_mc_x,old_fol1_err_x,end="\n")
-        a = swarm_controller(dt = 0.05)#编队控制器
-        kuadmini_1.goto(follower1_mc_x + a[0], follower1_mc_y + a[1], ctrl_waypoints[1][tt][2])
         for agent_number in range(number):
             try:
+                a = swarm_controller(dt = 0.05)#编队控制器
+                fol1_data_x[tt, 0] = follower1_mc_x
+                fol1_data_d_x[tt, 0] = follower1_mc_x - a
+                fol1_data_x_err[tt, 0] = old_fol1_err_x
+                # fol1_data_y[tt, 0] = follower1_mc_y
+                # fol1_data_d_y[tt, 0] = follower1_mc_y + a[1]
+                # fol1_data_y_err[tt, 0] = old_fol1_err_y
+                print(follower1_mc_x,old_fol1_err_x,end="\n")
+                kuadmini_1.goto(follower1_mc_x - a, ctrl_waypoints[0][tt][1], ctrl_waypoints[0][tt][2])
                 kuads[agent_number].goto(ctrl_waypoints[agent_number][tt][0], ctrl_waypoints[agent_number][tt][1], ctrl_waypoints[agent_number][tt][2])
                 show_pos_now(pub, [kuads[agent_number].mc_x, kuads[agent_number].mc_y, kuads[agent_number].mc_z], agent_number)
             except IndexError as e:
@@ -253,9 +254,9 @@ if __name__ == "__main__":
     rospy.init_node('kuadmini_swarm', anonymous=False, disable_signals=True)
 
     # 订阅领航机动捕话题
-    # rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(leader_number),PoseStamped,leader_posi_cb)
+    rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(leader_number),PoseStamped,leader_posi_cb)
     # 订阅跟随机1动捕话题
-    # rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
+    rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
 
     kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
     kuadmini_1 = Kuadmini(addr_kuadmini1, number=1, use_tcp=1)

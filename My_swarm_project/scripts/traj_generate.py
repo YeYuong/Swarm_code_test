@@ -178,22 +178,19 @@ if __name__ == "__main__":
     waypoint0 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=1)
     waypoint1 = generate_hoverline([0, -1, 0.5], [0, 1, 0.5], hover_time=1)
     waypoint0to1 = generate_transition(waypoint0, waypoint1, speed=0.2)
-    waypoint2 = generate_hoverline([1, -1, 0.5], [1, 1, 0.5], hover_time=1)
-    waypoint1to2 = generate_transition(waypoint1, waypoint2, speed=0.4)
-    waypoint3 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=1)
+    waypoint2 = generate_hoverline([1.5, -1, 0.5], [1.5, 1, 0.5], hover_time=1)
+    waypoint1to2 = generate_transition(waypoint1, waypoint2, speed=0.2)
+    waypoint3 = generate_hoverline([1.5, -1, 0.2], [1.5, 1, 0.2], hover_time=1)
     waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.2)
     waypoints = np.vstack((waypoint0, waypoint0to1,
                            waypoint1, waypoint1to2,
                            waypoint2, waypoint2to3,
                            waypoint3))
 
-    np.savetxt("line.txt", waypoints, fmt="%.4f")
+    np.savetxt("line1.txt", waypoints, fmt="%.4f")
     
     #绘制图形
-    x_column = waypoints[:, 2]#提取第一列数据
-    shape = x_column.shape
-    print(shape)
-    print(shape[1])
+    x_column = waypoints[:, 3]#提取第一列数据
 
     # 计算时间值
     time_interval = 0.05  # 时间间隔为0.05秒
@@ -206,7 +203,7 @@ if __name__ == "__main__":
 
     # 创建曲线图
     plt.figure(figsize=(8, 6))
-    plt.plot(time_values, x_column, linestyle='-', color='b', label='Original Data')  # 绘制原始曲线
+    plt.plot(time_values, x_column, linestyle='-', Marker = 'o', color='b', label='Original Data')  # 绘制原始曲线
     plt.plot(smooth_time_values, smooth_first_column, color='r', label='Smooth Curve')  #绘制平滑曲线
     plt.xlabel('Time (seconds)')
     plt.ylabel('Vertical Distance (units)')
