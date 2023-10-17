@@ -191,6 +191,9 @@ if __name__ == "__main__":
     
     #绘制图形
     x_column = waypoints[:, 2]#提取第一列数据
+    shape = x_column.shape
+    print(shape)
+    print(shape[1])
 
     # 计算时间值
     time_interval = 0.05  # 时间间隔为0.05秒
