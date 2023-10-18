@@ -140,7 +140,7 @@ def swarm_controller(dt = INTERV_TIME):
     global old_fol1_err_x,old_fol1_err_y
     global  fol1_err_x, fol1_err_y
     kp,ki,kd = 1.0,0.0,0.0#PID参数确定
-    d_x,d_y = 0.5,0.5#期望编队距离参数确定
+    d_x,d_y = 0.3,0.5#期望编队距离参数确定
 
     #计算领航与跟随机1实际距离
     r_x =  leader_mc_x - follower1_mc_x
@@ -205,14 +205,14 @@ def goTrajactory(kuads, pub, traj_file):
         for agent_number in range(number):
             try:
                 a = swarm_controller(dt = 0.05)#编队控制器
-                fol1_data_x[tt, 0] = follower1_mc_x
-                fol1_data_d_x[tt, 0] = follower1_mc_x - a
+                fol1_data_x[tt, 0] = follower1_mc_x + 0.3
+                fol1_data_d_x[tt, 0] = follower1_mc_x - a +0.3
                 fol1_data_x_err[tt, 0] = old_fol1_err_x
                 # fol1_data_y[tt, 0] = follower1_mc_y
-                # fol1_data_d_y[tt, 0] = follower1_mc_y + a[1]
+                # fol1_data_d_y[tt, 0] = follower1_mc_y - a
                 # fol1_data_y_err[tt, 0] = old_fol1_err_y
                 print(follower1_mc_x,old_fol1_err_x,end="\n")
-                kuadmini_1.goto(follower1_mc_x - a, ctrl_waypoints[0][tt][1], ctrl_waypoints[0][tt][2])
+                kuadmini_1.goto(follower1_mc_x - a, ctrl_waypoints[0][tt][1] - 0.3, ctrl_waypoints[0][tt][2])
                 kuads[agent_number].goto(ctrl_waypoints[agent_number][tt][0], ctrl_waypoints[agent_number][tt][1], ctrl_waypoints[agent_number][tt][2])
                 show_pos_now(pub, [kuads[agent_number].mc_x, kuads[agent_number].mc_y, kuads[agent_number].mc_z], agent_number)
             except IndexError as e:
@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
     # goHover(kuadmini_k)# kuadmini_0, kuadmini_1, kuadmini_2,
     # goSwings((kuadmini_0,))
-    goTrajactory((kuadmini_0,), pub, "line1.txt")
+    goTrajactory((kuadmini_0,), pub, "circle.txt")
 
     while not rospy.is_shutdown():
         time.sleep(1)
