@@ -9,7 +9,7 @@ from scipy.interpolate import interp1d
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 
-INTERV_TIME = 0.1
+INTERV_TIME = 0.05
 
 def generate_hoverline(head=[0,-1,0.2], tail=[0,1,0.2], number=3, hover_time=1, interv_time=INTERV_TIME):
     row_ = round(hover_time/interv_time)
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     x_column = waypoints[:, 0]#提取第一列数据
 
     # 计算时间值
-    time_interval = 0.1  # 时间间隔为0.05秒
+    time_interval = 0.05  # 时间间隔为0.05秒
     time_values = np.arange(0, len(x_column) * time_interval, time_interval)
 
     # 使用线性插值创建平滑曲线

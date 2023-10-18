@@ -8,12 +8,12 @@ from geometry_msgs.msg import PoseStamped, TwistStamped
 from geometry_msgs.msg import Point
 from kuadmini import Kuadmini
 
-INTERV_TIME = 0.05
+# INTERV_TIME = 0.05
 
 # 领航、跟随机动捕刚体编号
 leader_number = 0
 leader_mc_x, leader_mc_y, leader_mc_z = 0.0, 0.0, 0.0
-follower1_number = 1
+follower1_number = 3
 follower1_mc_x, follower1_mc_y, follower1_mc_z = 0.0, 0.0, 0.0
 old_fol1_err_x, old_fol1_err_y =0.0, 0.0
 fol1_err_x, fol1_err_y = 0.0, 0.0
@@ -135,12 +135,12 @@ def goSwings(kuads):
     time.sleep(0.1)
 
 #PID协同控制器
-def swarm_controller(dt = INTERV_TIME):
+def swarm_controller(dt):
     
     global old_fol1_err_x,old_fol1_err_y
     global  fol1_err_x, fol1_err_y
-    kp,ki,kd = 1.5,0.0,0.0#PID参数确定
-    d_x,d_y = 0.3,0.5#期望编队距离参数确定
+    kp,ki,kd = 1.35,0.0,0.0#PID参数确定
+    d_x,d_y = 0.4,0.5#期望编队距离参数确定
 
     #计算领航与跟随机1实际距离
     r_x =  leader_mc_x - follower1_mc_x
@@ -194,28 +194,29 @@ def goTrajactory(kuads, pub, traj_file):
                 kuads[agent_number].takeoff()
             except IndexError as e:
                 pass
-        kuadmini_1.takeoff()#跟随机同样起飞  
+        kuadmini_3.takeoff()#跟随机同样起飞  
         time.sleep(0.1)
 
     print("\rtrajactory!")
     #给与目标点次数
-    nb_waypoints = ctrl_waypoints[0].shape[0] * 2
+    nb_waypoints = ctrl_waypoints[0].shape[0] * 5
     print(nb_waypoints)
     yy = -1
     for tt in range(nb_waypoints):#领航机开始跟随期望轨迹飞行，重构控制器，将PID环放置于给点回路之内，原给点回路变为10Hz，现将PID环改为20HZ
         # print(tt,end="\n")
         if rospy.is_shutdown():
             break
-        a = swarm_controller(dt = 0.05)#编队控制器
-        fol1_data_x[tt//2, 0] = follower1_mc_x + 0.3
-        fol1_data_d_x[tt//2, 0] = follower1_mc_x - a +0.3
-        fol1_data_x_err[tt//2, 0] = old_fol1_err_x
-        # fol1_data_y[tt, 0] = follower1_mc_y
-        # fol1_data_d_y[tt, 0] = follower1_mc_y - a
-        # fol1_data_y_err[tt, 0] = old_fol1_err_y
-        print(follower1_mc_x,old_fol1_err_x,end="\n")
-        kuadmini_1.goto(follower1_mc_x - a, ctrl_waypoints[0][yy][1] - 0.3, ctrl_waypoints[0][yy][2])  
         if tt % 2 == 0:#原给点回路保持变为10Hz
+            a = swarm_controller(dt = 0.02)#编队控制器
+            fol1_data_x[tt//5, 0] = follower1_mc_x + 0.3
+            fol1_data_d_x[tt//5, 0] = follower1_mc_x - a +0.3
+            fol1_data_x_err[tt//5, 0] = old_fol1_err_x
+            # fol1_data_y[tt, 0] = follower1_mc_y
+            # fol1_data_d_y[tt, 0] = follower1_mc_y - a
+            # fol1_data_y_err[tt, 0] = old_fol1_err_y
+            print(follower1_mc_x,old_fol1_err_x,end="\n")
+            kuadmini_3.goto(follower1_mc_x - a, ctrl_waypoints[0][yy][1] - 0.4, ctrl_waypoints[0][yy][2])  
+        if tt % 5 == 0:#原给点回路保持变为10Hz
             yy += 1
             print("gei dian","\n")
             for agent_number in range(number):
@@ -225,15 +226,14 @@ def goTrajactory(kuads, pub, traj_file):
                 except IndexError as e:
                     pass
                 show_pos_now(pub, [ctrl_waypoints[agent_number][yy][0], ctrl_waypoints[agent_number][yy][1], ctrl_waypoints[agent_number][yy][2]], agent_number + 4)
-            
-        time.sleep(0.05)
+        time.sleep(0.01)
     
     for agent_number in range(number):
         try:
             kuads[agent_number].land()
         except IndexError as e:
             pass
-    kuadmini_1.land()
+    kuadmini_3.land()
     time.sleep(1.5)
 
      # 创建曲线图
@@ -267,9 +267,9 @@ if __name__ == "__main__":
     rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
 
     kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
-    kuadmini_1 = Kuadmini(addr_kuadmini1, number=1, use_tcp=1)
+    # kuadmini_1 = Kuadmini(addr_kuadmini1, number=1, use_tcp=1)
     # kuadmini_2 = Kuadmini(addr_kuadmini2, number=2, use_tcp=1)
-    # kuadmini_3 = Kuadmini(addr_kuadmini3, number=3, use_tcp=1)
+    kuadmini_3 = Kuadmini(addr_kuadmini3, number=3, use_tcp=1)
     # kuadmini_k = Kuadmini(addr_kground, number=0, use_tcp=1)
 
     pub = rospy.Publisher("traj_show", Marker, queue_size=10)
