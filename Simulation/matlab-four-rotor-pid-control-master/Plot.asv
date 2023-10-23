@@ -1,0 +1,9 @@
+figure(1);
+L_x=out.F1_x;
+L_y=Leader{2}.Values;
+% F1_x=Follower1{1}.Values;
+% F1_y=Follower1{2}.Values;
+plot(L_x,L_y,'r-');
+hold on
+plot(out.F1_x,out.F1_y,'b-');
+legend('领航者运动轨迹','跟随者1运动轨迹');
