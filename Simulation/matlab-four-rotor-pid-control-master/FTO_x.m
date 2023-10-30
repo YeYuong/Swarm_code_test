@@ -28,7 +28,7 @@ ut=u(1);
 x1=u(2);
 
 w=20;
-t=-1/6;
+t=-0.3;
 m2=1+t;
 m3=1+2*t;
 m4=1+3*t;
@@ -42,11 +42,11 @@ e_=abs(e);
 sys(1)=x(2)+3*w*e_^m2*sign(e);
 sys(2)=ut+x(3)+3*w^2*e_^m3*sign(e);
 sys(3)=w^3*e_^m4*sign(e);
-if sys(3) > -0.08 && sys(3) < 0.08
-    sys(3) = sys(3);
-else
-    sys(3) = 0;
-end
+% if sys(3) > -0.08 && sys(3) < 0.08
+%     sys(3) = sys(3);
+% else
+%     sys(3) = 0;
+% end
 
 function sys=mdlOutputs(t,x,u)
 sys(1)=x(1);
