@@ -461,7 +461,7 @@ void xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_ty * b
 	x_posi_ctrl->x_posi_err = x_posi_ctrl->expect_x_posi - getBodyPosition(MC_X);
 	y_posi_ctrl->y_posi_err = y_posi_ctrl->expect_y_posi - getBodyPosition(MC_Y);
 
-    static float x_err_lpf = 0.0;
+    static float x_err_lpf = 0.0;//进行了位置滤波
     static float y_err_lpf = 0.0;
     x_err_lpf += 0.3*(x_posi_ctrl->x_posi_err - x_err_lpf);
     y_err_lpf += 0.3*(y_posi_ctrl->y_posi_err - y_err_lpf);

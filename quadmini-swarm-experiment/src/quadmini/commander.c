@@ -27,7 +27,7 @@ void commander_takeoff(void)
     cmdr_update = 1;
 }
 
-void commander_goto(float *axis)
+void commander_goto(float *axis)//从这里将接口直接从期望位置改为期望姿态
 {
     // 设置目标点
     if(global_data.body_ctrl.flight_status == FLIGHT_FLYING)

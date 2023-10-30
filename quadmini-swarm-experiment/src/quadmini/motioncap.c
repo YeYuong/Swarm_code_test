@@ -74,7 +74,7 @@ void height_fusion_20_mc(float dt)
 	// motioncap_cradle(dt);
 }
 
-void motioncap_on_pack_received(void *data)
+void motioncap_on_pack_received(void *data)//获取动捕数据，即刚体位置、速度、姿态数据
 {
 	led_set(2, 1);
 	motioncap_update = 1;
