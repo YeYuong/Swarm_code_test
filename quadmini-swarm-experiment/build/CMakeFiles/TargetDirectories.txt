@@ -1,6 +1,0 @@
-/home/yyl/gitcode/quadmini-swarm-experiment/build/CMakeFiles/rebuild_cache.dir
-/home/yyl/gitcode/quadmini-swarm-experiment/build/CMakeFiles/edit_cache.dir
-/home/yyl/gitcode/quadmini-swarm-experiment/build/CMakeFiles/quadmini.dir
-/home/yyl/gitcode/quadmini-swarm-experiment/build/lib/CMakeFiles/rebuild_cache.dir
-/home/yyl/gitcode/quadmini-swarm-experiment/build/lib/CMakeFiles/edit_cache.dir
-/home/yyl/gitcode/quadmini-swarm-experiment/build/lib/CMakeFiles/kendryte.dir
