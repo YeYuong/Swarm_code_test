@@ -1,0 +1,6 @@
+/home/yyl/gitcode/quadmini-throughring-demo/build/CMakeFiles/rebuild_cache.dir
+/home/yyl/gitcode/quadmini-throughring-demo/build/CMakeFiles/edit_cache.dir
+/home/yyl/gitcode/quadmini-throughring-demo/build/CMakeFiles/quadmini.dir
+/home/yyl/gitcode/quadmini-throughring-demo/build/lib/CMakeFiles/rebuild_cache.dir
+/home/yyl/gitcode/quadmini-throughring-demo/build/lib/CMakeFiles/edit_cache.dir
+/home/yyl/gitcode/quadmini-throughring-demo/build/lib/CMakeFiles/kendryte.dir

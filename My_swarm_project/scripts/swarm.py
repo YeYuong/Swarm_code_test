@@ -13,7 +13,7 @@ from kuadmini import Kuadmini
 # 领航、跟随机动捕刚体编号,位置（m）
 leader_number = 0
 leader_mc_x, leader_mc_y, leader_mc_z = 0.0, 0.0, 0.0
-follower1_number = 3
+follower1_number = 1
 follower1_mc_x, follower1_mc_y, follower1_mc_z = 0.0, 0.0, 0.0
 old_fol1_err_x, old_fol1_err_y =0.0, 0.0
 fol1_err_x, fol1_err_y = 0.0, 0.0
@@ -183,7 +183,6 @@ def swarm_controller(dt):
     fol1_err_x = dx - follower1_mc_x
     fol1_err_y = dy - follower1_mc_y
 
-
     #对误差进行滤波，更加平滑
     # fol1_err_x_lpf += 1*(fol1_err_x - fol1_err_x_lpf) 
     # fol1_err_y_lpf += 1*(fol1_err_y - fol1_err_x_lpf)
@@ -199,7 +198,6 @@ def swarm_controller(dt):
     dd_dy = (d_dy - old_d_dy) / dt
 
     #滑模面定义
-
     s_x = c*fol1_err_x + fol1_err_x_d
     s_y = c*fol1_err_y + fol1_err_y_d
 
@@ -260,7 +258,7 @@ def goTrajactory(kuads, pub, traj_file):
                 kuads[agent_number].takeoff()
             except IndexError as e:
                 pass
-        kuadmini_3.takeoff()#跟随机同样起飞  
+        kuadmini_1.takeoff()#跟随机同样起飞  
         time.sleep(0.1)
 
     print("\rtrajactory!")
@@ -274,18 +272,18 @@ def goTrajactory(kuads, pub, traj_file):
         if rospy.is_shutdown():
             break
         # if tt % 2 == 0:
-        a = swarm_controller(dt = 0.05)#编队控制器,100Hz
-        print(a[0],a[1],end="\n")
+        # a = swarm_controller(dt = 0.05)#编队控制器,100Hz
+        # print(a[0],a[1],end="\n")
         fol1_data_x[yy, 0] = follower1_mc_x #实际位置
         fol1_data_d_x[yy, 0] = leader_mc_x - 0.4 #期望位置
-        fol1_data_x_err[yy, 0] = old_fol1_err_x
+        fol1_data_x_err[yy, 0] = 0.4 - leader_mc_x + follower1_mc_x
         # fol1_data_ob_x[yy, 0] = ob_x 
         # fol1_data_r_x[yy, 0] = r_x 
         # fol1_data_y[tt, 0] = follower1_mc_y
         # fol1_data_d_y[tt, 0] = follower1_mc_y - a
         # fol1_data_y_err[tt, 0] = old_fol1_err_y
         print(follower1_mc_x,old_fol1_err_x,end="\n")
-        kuadmini_3.goto( a[0], a[1], ctrl_waypoints[0][yy][2])  
+        kuadmini_1.goto( leader_mc_x - 0.4, leader_mc_y - 0.4, ctrl_waypoints[0][yy][2])  
         
         # if tt % 2 == 0:#给点回路50Hz
             # yy += 1
@@ -304,7 +302,7 @@ def goTrajactory(kuads, pub, traj_file):
             kuads[agent_number].land()
         except IndexError as e:
             pass
-    kuadmini_3.land()
+    kuadmini_1.land()
     time.sleep(1.5)
 
      # 创建曲线图
@@ -339,17 +337,18 @@ if __name__ == "__main__":
     # 订阅跟随机1动捕话题
     rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
 
-    kuadmini_0 = Kuadmini(addr_kground, number=0, use_tcp=1)
-    # kuadmini_1 = Kuadmini(addr_kuadmini1, number=1, use_tcp=1)
+    kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
+    kuadmini_1 = Kuadmini(addr_kuadmini1, number=1, use_tcp=1)
     # kuadmini_2 = Kuadmini(addr_kuadmini2, number=2, use_tcp=1)
     # kuadmini_3 = Kuadmini(addr_kground, number=3, use_tcp=1)
+    # kuadmini_4 = Kuadmini(addr_kground, number=4, use_tcp=1)
     # kuadmini_k = Kuadmini(addr_kground, number=0, use_tcp=1)
 
     pub = rospy.Publisher("traj_show", Marker, queue_size=10)
 
     # goHover(kuadmini_k)# kuadmini_0, kuadmini_1, kuadmini_2,
     # goSwings((kuadmini_0,))
-    # goTrajactory((kuadmini_0,), pub, "circle.txt")
+    goTrajactory((kuadmini_0,), pub, "line1.txt")
 
     while not rospy.is_shutdown():
         time.sleep(1)
