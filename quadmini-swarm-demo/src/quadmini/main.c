@@ -37,6 +37,7 @@ int main() {
     gpio_init();
     fpgio_init();
     param_init();
+    FTO_init();
     LED_Init();
 	rgb_set(5,10,5);
     motor_init(&(global_data.motor));

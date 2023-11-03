@@ -12,6 +12,30 @@
 #define FLIGHT_TAKING_OFF	3
 #define FLIGHT_FLYING		4
 #define FLIGHT_LANDING		5
+
+
+//有限时间状态观测器定义
+struct FTO_2_TYPE
+{	
+	double b0;//飞机重量
+	//观测值，依次为位置、速度、扰动
+	double x1;
+	double x2;
+	double x3;
+	//观测增益
+	double bate1;
+	double bate2;
+	double bate3;
+	//有限时间观测器参数
+	double m1;
+	double m2;
+	double m3;
+	double m4;
+	double l;
+};
+extern struct FTO_2_TYPE X_FTO; 
+extern struct FTO_2_TYPE Y_FTO; 
+
  
 
 struct pid_param_ty
@@ -101,6 +125,9 @@ struct x_posi_ctrl_ty
 	double x_posi_err_i;
 	double out_x_sp;
 	double s_x;
+	double s_x_d;
+	double s_x_i;
+	double s_x_I;
 };
 
 struct y_posi_ctrl_ty
@@ -117,6 +144,9 @@ struct y_posi_ctrl_ty
 	double y_posi_err_i;
 	double out_y_sp;
 	double s_y;
+	double s_y_d;
+	double s_y_i;
+	double s_y_I;
 };
 
 struct pid_data_ty
@@ -180,5 +210,9 @@ void flight_status_control(struct ctrl_data_ty * body_ctrl, struct remote_ctrl_t
 void test_control(float dt);
 
 void SMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_ty * body_data, struct remote_ctrl_ty * remote_ctrl, float dt);
+void STSMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_ty * body_data, struct remote_ctrl_ty * remote_ctrl, float dt);
+
+void FTO_init();
+void FTO_update(float dt, float u, float fb, struct FTO_2_TYPE * fto);
 
 #endif

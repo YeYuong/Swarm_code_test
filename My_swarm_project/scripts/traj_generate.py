@@ -9,7 +9,7 @@ from scipy.interpolate import interp1d
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 
-INTERV_TIME = 0.05
+INTERV_TIME = 0.02
 
 def generate_hoverline(head=[0,-1,0.2], tail=[0,1,0.2], number=3, hover_time=1, interv_time=INTERV_TIME):
     row_ = round(hover_time/interv_time)
@@ -178,10 +178,10 @@ if __name__ == "__main__":
     waypoint0 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=4)
     # waypoint1 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=2)
     # waypoint0to1 = generate_transition(waypoint0, waypoint1, speed=0.2)
-    waypoint2 = generate_hoverline([1.5, -1, 0.2], [1.5, 1, 0.2], hover_time=2)
-    waypoint0to2 = generate_transition(waypoint0, waypoint2, speed=0.2)
-    waypoint3 = generate_hoverline([1.5, -1, 0.2], [1.5, 1, 0.2], hover_time=2)
-    waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.2)
+    waypoint2 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
+    waypoint0to2 = generate_transition(waypoint0, waypoint2, speed=0.04)
+    waypoint3 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
+    waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.04)
     waypoints = np.vstack((waypoint0, waypoint0to2,
                            waypoint2, waypoint2to3,
                            waypoint3))
@@ -203,18 +203,18 @@ if __name__ == "__main__":
     x_column = waypoints[:, 0]#提取第一列数据
 
     # 计算时间值
-    time_interval = 0.05 # 时间间隔为0.05秒
-    time_values = np.arange(0, len(x_column) * time_interval, time_interval)
+    time_interval = 0.02 # 时间间隔为0.05秒
+    time_values = np.arange(0, len(x_column) * time_interval, time_interval) - 1
 
     # 使用线性插值创建平滑曲线
-    interpolated_function = interp1d(time_values, x_column, kind='cubic')
-    smooth_time_values = np.linspace(time_values[0], time_values[-1], 100)  # 更多数据点以实现平滑曲线
-    smooth_first_column = interpolated_function(smooth_time_values)
+    # interpolated_function = interp1d(time_values, x_column, kind='cubic')
+    # smooth_time_values = np.linspace(time_values[0], time_values[-1], 100)  # 更多数据点以实现平滑曲线
+    # smooth_first_column = interpolated_function(smooth_time_values)
 
     # 创建曲线图
     plt.figure(figsize=(8, 6))
-    plt.plot(time_values, x_column, linestyle='-', Marker = 'o', color='b', label='Original Data')  # 绘制原始曲线
-    plt.plot(smooth_time_values, smooth_first_column, color='r', label='Smooth Curve')  #绘制平滑曲线
+    plt.plot(time_values, x_column, linestyle='-', marker = 'o', color='b', label='Original Data')  # 绘制原始曲线
+    # plt.plot(smooth_time_values, smooth_first_column, color='r', label='Smooth Curve')  #绘制平滑曲线
     plt.xlabel('Time (seconds)')
     plt.ylabel('Vertical Distance (units)')
     plt.title('Smooth Vertical Distance vs. Time')
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # plt.show()
 
 
-    ctrl_waypoint = read_waypoint_data("circle.txt")
+    ctrl_waypoint = read_waypoint_data("line1.txt")
     # number = len(ctrl_waypoint)
     # print(number)
 

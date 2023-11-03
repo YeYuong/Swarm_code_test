@@ -86,8 +86,8 @@ void generate_data_pack(struct data_pack_ty *data_pack) {
     data_pack->data6 = attitude_data.imu.gyro.x * RAD_TO_ANG;
 	data_pack->data7 = attitude_data.imu.gyro.y * RAD_TO_ANG;
 	data_pack->data8 = attitude_data.imu.gyro.z * RAD_TO_ANG;
-    data_pack->data9 = attitude_data.imu.acc.x;
-	data_pack->data10= attitude_data.imu.acc.y;
+    // data_pack->data9 = attitude_data.imu.acc.x;
+	// data_pack->data10= attitude_data.imu.acc.y;
 	data_pack->data11= attitude_data.imu.acc.z;
     // 光流原始数据
     data_pack->data12= opFlow.pixSum[OP_X];
@@ -128,8 +128,8 @@ void generate_data_pack(struct data_pack_ty *data_pack) {
 	// data_pack->data7 = attitude_data.imu.gyro.x * RAD_TO_ANG;
 	// data_pack->data8 = global_data.body_ctrl.angle_speed_ctrl.out_motor_speed.x;
 	// // 角度环--roll
-	// data_pack->data9 = global_data.body_ctrl.angle_ctrl.expect_angle.x;
-	// data_pack->data10= attitude_data.heading_angle.roll;
+	data_pack->data9 = global_data.body_ctrl.angle_ctrl.expect_angle.x;
+	data_pack->data10= attitude_data.heading_angle.roll;
 	// data_pack->data11= global_data.body_ctrl.angle_ctrl.out_angle_speed.x;
 	// // 高度速度环
 	// data_pack->data31= global_data.body_ctrl.height_speed_ctrl.expect_height_speed;
@@ -141,7 +141,7 @@ void generate_data_pack(struct data_pack_ty *data_pack) {
     // data_pack->data36= global_data.body_ctrl.height_ctrl.out_height_speed;
 	// // 位置速度环--y
     data_pack->data31= global_data.body_ctrl.y_speed_ctrl.expect_y_speed;
-    data_pack->data32= getBodySpeed(MC_Y);
+    data_pack->data32= global_data.body_ctrl.x_speed_ctrl.out_pitch;
 	data_pack->data33= global_data.body_ctrl.y_speed_ctrl.out_roll;
 	// // 位置环--y
 	data_pack->data34= global_data.body_ctrl.x_posi_ctrl.expect_x_posi;
@@ -150,6 +150,10 @@ void generate_data_pack(struct data_pack_ty *data_pack) {
 	data_pack->data37= getBodyPosition(MC_Y);
 	data_pack->data38= global_data.body_ctrl.x_posi_ctrl.s_x;
 	data_pack->data39= global_data.body_ctrl.y_posi_ctrl.s_y;
+	data_pack->data40= X_FTO.x1;
+	data_pack->data41= X_FTO.x3;
+	data_pack->data42= Y_FTO.x1;
+	data_pack->data43= Y_FTO.x3;
 	// // 光流数据
 	// data_pack->data24= getOpFlowPosition(OP_X); 
 	// data_pack->data25= getOpFlowPosition(OP_Y);

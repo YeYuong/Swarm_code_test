@@ -23,6 +23,39 @@
 #define LIMIT_R(x,min,max) 	((x) < (min)  ? (min) : ((x) > (max) ? (max) : (x)))
 
 #define sign_s(s)           (s < 0 ? -1 : (s > 0 ? 1 : 0 ))//切换函数
+struct FTO_2_TYPE X_FTO;
+struct FTO_2_TYPE Y_FTO;
+
+void FTO_init()
+{
+	X_FTO.b0 = 0.04;
+	X_FTO.bate1 = 3 * 30;
+	X_FTO.bate2 = 3*pow(30, 2);
+	X_FTO.bate3 = pow(30, 3);
+	X_FTO.l = -1/3;
+	X_FTO.m2 = 1 + X_FTO.l;
+	X_FTO.m3 = 1 + 2 * X_FTO.l;
+	X_FTO.m4 = 1 + 3 * X_FTO.l;
+
+	Y_FTO.b0 = 0.04;
+	Y_FTO.bate1 = 3 * 30;
+	Y_FTO.bate2 = 3*pow(30, 2);
+	Y_FTO.bate3 = pow(30, 3);
+	Y_FTO.l = -1/3;
+	Y_FTO.m2 = 1 + Y_FTO.l;
+	Y_FTO.m3 = 1 + 2 * Y_FTO.l;
+	Y_FTO.m4 = 1 + 3 * Y_FTO.l;
+}
+
+void FTO_update(float dt, float u, float fb, struct FTO_2_TYPE * fto)
+{
+	double err = 0;
+	err = fb - fto->x1;
+	fto->x1 = dt * (fto->x2 + fto->bate1 * pow(fabs(err), fto->m2) * sign_s(err));
+	fto->x2 = dt * (fto->x3 + fto->bate2 * pow(fabs(err), fto->m3) * sign_s(err) + u * fto->b0);
+	fto->x3 = dt * fto->bate3 * pow(fabs(err), fto->m4) * sign_s(err);
+
+}
 
 struct pid_data_ty pid_data = {
 	.angle_pid_param[0] = 		{6.0, 0.1, 0.0},
@@ -95,6 +128,10 @@ void ctrl_reset(struct ctrl_data_ty * ctrl_data)
 	ctrl_data->out_pitch = 0.0;
 	ctrl_data->out_yaw = 0.0;
 	ctrl_data->flight_status = FLIGHT_LOCKED;
+	ctrl_data->x_posi_ctrl.s_x = 0.0;
+	ctrl_data->x_posi_ctrl.s_x_I = 0.0;
+	ctrl_data->y_posi_ctrl.s_y = 0.0;
+	ctrl_data->y_posi_ctrl.s_y_I = 0.0;
 
 	OpFlowDataClear();
 }
@@ -219,9 +256,9 @@ void angle_speed_ctrl(struct ctrl_data_ty * body_ctrl,struct data_fusion_ty * bo
 	angle_speed_ctrl->expect_angle_speed.x = body_ctrl->angle_ctrl.out_angle_speed.x;
 	angle_speed_ctrl->expect_angle_speed.y = body_ctrl->angle_ctrl.out_angle_speed.y;
 	angle_speed_ctrl->expect_angle_speed.z = body_ctrl->angle_ctrl.out_angle_speed.z;
-	LIMIT(angle_speed_ctrl->expect_angle_speed.x, -400.0, 400.0);
-	LIMIT(angle_speed_ctrl->expect_angle_speed.y, -400.0, 400.0);
-	LIMIT(angle_speed_ctrl->expect_angle_speed.z, -400.0, 400.0);
+	// LIMIT(angle_speed_ctrl->expect_angle_speed.x, -400.0, 400.0);
+	// LIMIT(angle_speed_ctrl->expect_angle_speed.y, -400.0, 400.0);
+	// LIMIT(angle_speed_ctrl->expect_angle_speed.z, -400.0, 400.0);
 
 	angle_speed_z += (body_data->imu.gyro.z * RAD_TO_ANG - angle_speed_z) * 0.10f; // 角速度滤波
 
@@ -268,9 +305,12 @@ void angle_ctrl(struct ctrl_data_ty * body_ctrl,struct data_fusion_ty * body_dat
 	//获取角度期望值
 	if(body_ctrl->flight_status >= FLIGHT_TAKING_OFF)
 	{
-		angle_ctrl->expect_angle.x = LIMIT_R(body_ctrl->y_speed_ctrl.out_roll, -20.0, 20.0);
-		angle_ctrl->expect_angle.y = LIMIT_R(body_ctrl->x_speed_ctrl.out_pitch, -20.0, 20.0);
+		// angle_ctrl->expect_angle.x = LIMIT_R(body_ctrl->y_speed_ctrl.out_roll, -20.0, 20.0);
+		// angle_ctrl->expect_angle.y = LIMIT_R(body_ctrl->x_speed_ctrl.out_pitch, -20.0, 20.0);
+		angle_ctrl->expect_angle.x = body_ctrl->y_speed_ctrl.out_roll;
+		angle_ctrl->expect_angle.y = body_ctrl->x_speed_ctrl.out_pitch;
 	}
+	if ( fabs(remote_ctrl->yaw) < 0.1)    remote_ctrl->yaw = 0.0;
 	angle_ctrl->expect_angle.z = attitude_data.start_yaw += remote_ctrl->yaw * 100.0 * dt;
 
 	//计算角度误差
@@ -518,22 +558,22 @@ void SMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_ty
 	struct x_posi_ctrl_ty * x_posi_ctrl = &(body_ctrl->x_posi_ctrl);
 	struct y_posi_ctrl_ty * y_posi_ctrl = &(body_ctrl->y_posi_ctrl);
 
-	float exp_x_speed = remote_ctrl->pitch * 0.8;
-	float exp_y_speed = -remote_ctrl->roll * 0.8;
+	float exp_x_speed = remote_ctrl->pitch * 0.4;
+	float exp_y_speed = -remote_ctrl->roll * 0.4;
 	if ( fabs(exp_x_speed) < 0.1)    exp_x_speed = 0.0;
     if ( fabs(exp_y_speed) < 0.1)    exp_y_speed = 0.0;
-	x_posi_ctrl->expect_x_posi += exp_x_speed * dt;
-	y_posi_ctrl->expect_y_posi += exp_y_speed * dt;
+	x_posi_ctrl->expect_x_posi += exp_x_speed * dt * 0.1;
+	y_posi_ctrl->expect_y_posi += exp_y_speed * dt * 0.1;
 
 	//计算位置误差(期望位置-实际位置)期望位置由动捕得到
 	x_posi_ctrl->x_posi_err = -(x_posi_ctrl->expect_x_posi - getBodyPosition(MC_X));
 	y_posi_ctrl->y_posi_err = -(y_posi_ctrl->expect_y_posi - getBodyPosition(MC_Y));
 
 	//对位置误差进行滤波
-	// static float x_err_lpf = 0.0;
-    // static float y_err_lpf = 0.0;
-    // x_err_lpf += 0.3*(x_posi_ctrl->x_posi_err - x_err_lpf);
-    // y_err_lpf += 0.3*(y_posi_ctrl->y_posi_err - y_err_lpf);
+	static float x_err_lpf = 0.0;
+    static float y_err_lpf = 0.0;
+    x_err_lpf += 0.3*(x_posi_ctrl->x_posi_err - x_err_lpf);
+    y_err_lpf += 0.3*(y_posi_ctrl->y_posi_err - y_err_lpf);
 
 	//d_dx项
 	x_posi_ctrl->expect_x_posi_d = (x_posi_ctrl->expect_x_posi - x_posi_ctrl->old_expect_x_posi)/dt;
@@ -547,27 +587,105 @@ void SMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_ty
 	y_posi_ctrl->old_expect_y_posi_d = y_posi_ctrl->expect_y_posi_d;
 
     //位置误差导项
-	x_posi_ctrl->x_posi_err_d = (x_posi_ctrl->x_posi_err- x_posi_ctrl->old_x_posi_err) / dt;
-	y_posi_ctrl->y_posi_err_d = (y_posi_ctrl->y_posi_err - y_posi_ctrl->old_y_posi_err) / dt;
-	x_posi_ctrl->old_x_posi_err = x_posi_ctrl->x_posi_err;
-	y_posi_ctrl->old_y_posi_err = y_posi_ctrl->y_posi_err;
+	x_posi_ctrl->x_posi_err_d = (x_err_lpf- x_posi_ctrl->old_x_posi_err) / dt;
+	y_posi_ctrl->y_posi_err_d = (y_err_lpf - y_posi_ctrl->old_y_posi_err) / dt;
+	x_posi_ctrl->old_x_posi_err = x_err_lpf;
+	y_posi_ctrl->old_y_posi_err = y_err_lpf;
 
 	//一般二阶系统滑模面S
 	double c_x = 1;
-	double f_x = 0.8;
-	double k_x = 13;
+	double f_x = 5;
+	// double k_x = 3;
 
 	double c_y = 1;
-	double f_y = 0.8;
-	double k_y = 13;
-	x_posi_ctrl->s_x = c_x * x_posi_ctrl->x_posi_err + x_posi_ctrl->x_posi_err_d;
-	y_posi_ctrl->s_y = c_y * y_posi_ctrl->y_posi_err + y_posi_ctrl->y_posi_err_d;
+	double f_y = 5;
+	// double k_y = 3;
+
+	x_posi_ctrl->s_x = c_x * x_err_lpf + 1*x_posi_ctrl->x_posi_err_d;
+	y_posi_ctrl->s_y = c_y * y_err_lpf + 1*y_posi_ctrl->y_posi_err_d;
 	
-	x_speed_ctrl->out_pitch = (x_posi_ctrl->expect_x_posi_dd - c_x*x_posi_ctrl->x_posi_err_d - f_x * sign_s(x_posi_ctrl->s_x) - k_x*x_posi_ctrl->s_x) ;
-	y_speed_ctrl->out_roll  = (y_posi_ctrl->expect_y_posi_dd - c_y*y_posi_ctrl->y_posi_err_d - f_y * sign_s(y_posi_ctrl->s_y) - k_y*y_posi_ctrl->s_y) ;
+	x_speed_ctrl->out_pitch =(1*x_posi_ctrl->expect_x_posi_dd - c_x*x_posi_ctrl->x_posi_err_d - f_x * sign_s(x_posi_ctrl->s_x));// - k_x*x_posi_ctrl->s_x) ;
+	y_speed_ctrl->out_roll  =(1*y_posi_ctrl->expect_y_posi_dd - c_y*y_posi_ctrl->y_posi_err_d - f_y * sign_s(y_posi_ctrl->s_y));// - k_y*y_posi_ctrl->s_y) ;
 
 
-	x_speed_ctrl->out_pitch = LIMIT_R(x_speed_ctrl->out_pitch, -20.0, 20.0);
-	y_speed_ctrl->out_roll = -LIMIT_R(y_speed_ctrl->out_roll, -20.0,20.0);
+	x_speed_ctrl->out_pitch = LIMIT_R(x_speed_ctrl->out_pitch, -30.0, 30.0);
+	y_speed_ctrl->out_roll = -LIMIT_R(y_speed_ctrl->out_roll, -30.0,30.0);
+
+}
+
+void STSMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_ty * body_data, struct remote_ctrl_ty * remote_ctrl, float dt)
+{
+	struct x_speed_ctrl_ty * x_speed_ctrl = &(body_ctrl->x_speed_ctrl);
+	struct y_speed_ctrl_ty * y_speed_ctrl = &(body_ctrl->y_speed_ctrl);
+	struct x_posi_ctrl_ty * x_posi_ctrl = &(body_ctrl->x_posi_ctrl);
+	struct y_posi_ctrl_ty * y_posi_ctrl = &(body_ctrl->y_posi_ctrl);
+
+	float exp_x_speed = remote_ctrl->pitch * 0.4;
+	float exp_y_speed = -remote_ctrl->roll * 0.4;
+	if ( fabs(exp_x_speed) < 0.1)    exp_x_speed = 0.0;
+    if ( fabs(exp_y_speed) < 0.1)    exp_y_speed = 0.0;
+	x_posi_ctrl->expect_x_posi += exp_x_speed * dt * 0.1;
+	y_posi_ctrl->expect_y_posi += exp_y_speed * dt * 0.1;
+
+	//计算位置误差(期望位置-实际位置)期望位置由动捕得到
+	x_posi_ctrl->x_posi_err = -(x_posi_ctrl->expect_x_posi - getBodyPosition(MC_X));
+	y_posi_ctrl->y_posi_err = -(y_posi_ctrl->expect_y_posi - getBodyPosition(MC_Y));
+
+	//对位置误差进行滤波
+	static float x_err_lpf = 0.0;
+    static float y_err_lpf = 0.0;
+    x_err_lpf += 0.3*(x_posi_ctrl->x_posi_err - x_err_lpf);
+    y_err_lpf += 0.3*(y_posi_ctrl->y_posi_err - y_err_lpf);
+
+	//d_dx项
+	x_posi_ctrl->expect_x_posi_d = (x_posi_ctrl->expect_x_posi - x_posi_ctrl->old_expect_x_posi)/dt;
+	y_posi_ctrl->expect_y_posi_d = (y_posi_ctrl->expect_y_posi - y_posi_ctrl->old_expect_y_posi)/dt;
+	x_posi_ctrl->old_expect_x_posi = x_posi_ctrl->expect_x_posi;
+	y_posi_ctrl->old_expect_y_posi = y_posi_ctrl->expect_y_posi;
+	//dd_dx项
+	x_posi_ctrl->expect_x_posi_dd = (x_posi_ctrl->expect_x_posi_d - x_posi_ctrl->old_expect_x_posi_d)/dt;
+	y_posi_ctrl->expect_y_posi_dd = (y_posi_ctrl->expect_y_posi_d - y_posi_ctrl->old_expect_y_posi_d)/dt;
+	x_posi_ctrl->old_expect_x_posi_d = x_posi_ctrl->expect_x_posi_d;
+	y_posi_ctrl->old_expect_y_posi_d = y_posi_ctrl->expect_y_posi_d;
+
+    //位置误差导项
+	x_posi_ctrl->x_posi_err_d = (x_err_lpf- x_posi_ctrl->old_x_posi_err) / dt;
+	y_posi_ctrl->y_posi_err_d = (y_err_lpf - y_posi_ctrl->old_y_posi_err) / dt;
+	x_posi_ctrl->old_x_posi_err = x_err_lpf;
+	y_posi_ctrl->old_y_posi_err = y_err_lpf;
+
+	//一般二阶系统滑模面S
+	double lamda = -0.5;//在-1/2到0之间
+	double c_x = 1;
+	double f1_x = 8;
+	double f2_x = 0.1;
+	// double k_x = 3;
+	double c_y = 1;
+	double f1_y = 8;
+	double f2_y = 0.1;
+	// double k_y = 3;
+
+	//滑模面一阶导中间变量,需积分
+	x_posi_ctrl->s_x_i = pow(fabs(x_posi_ctrl->s_x ), 1 + 2 * lamda) * sign_s(x_posi_ctrl->s_x ); 
+	y_posi_ctrl->s_y_i = pow(fabs(y_posi_ctrl->s_y ), 1 + 2 * lamda) * sign_s(y_posi_ctrl->s_y );
+	x_posi_ctrl->s_x_I += x_posi_ctrl->s_x_i * dt;
+	y_posi_ctrl->s_y_I += y_posi_ctrl->s_y_i * dt;
+
+	//滑模面一阶导变量
+	x_posi_ctrl->s_x_d = pow(fabs(x_posi_ctrl->s_x ) , 1 + lamda) * sign_s(x_posi_ctrl->s_x ) ;
+	y_posi_ctrl->s_y_d = pow(fabs(y_posi_ctrl->s_y ) , 1 + lamda) * sign_s(y_posi_ctrl->s_y ) ;
+
+
+	x_posi_ctrl->s_x = c_x * x_err_lpf + 1*x_posi_ctrl->x_posi_err_d;
+	y_posi_ctrl->s_y = c_y * y_err_lpf + 1*y_posi_ctrl->y_posi_err_d;
+	
+	x_speed_ctrl->out_pitch = (1*x_posi_ctrl->expect_x_posi_dd - c_x*x_posi_ctrl->x_posi_err_d - f1_x * x_posi_ctrl->s_x_d - f2_x * x_posi_ctrl->s_x_I);// + X_FTO.x3 * X_FTO.b0);
+	y_speed_ctrl->out_roll  = (1*y_posi_ctrl->expect_y_posi_dd - c_y*y_posi_ctrl->y_posi_err_d - f1_y * y_posi_ctrl->s_y_d - f2_y * y_posi_ctrl->s_y_I);// + Y_FTO.x3 * Y_FTO.b0);
+
+	FTO_update(dt, x_speed_ctrl->out_pitch, getBodyPosition(MC_X), &X_FTO);
+	FTO_update(dt, y_speed_ctrl->out_roll,  getBodyPosition(MC_Y), &Y_FTO);
+
+	x_speed_ctrl->out_pitch = LIMIT_R(x_speed_ctrl->out_pitch, -30.0, 30.0);
+	y_speed_ctrl->out_roll = -LIMIT_R(y_speed_ctrl->out_roll, -30.0,30.0);
 
 }
