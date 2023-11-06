@@ -28,21 +28,21 @@ struct FTO_2_TYPE Y_FTO;
 
 void FTO_init()
 {
-	X_FTO.b0 = 0.04;
-	X_FTO.bate1 = 3 * 30;
-	X_FTO.bate2 = 3*pow(30, 2);
-	X_FTO.bate3 = pow(30, 3);
-	X_FTO.l = -1/3;
-	X_FTO.m2 = 1 + X_FTO.l;
+	X_FTO.b0 = 50;//12
+	X_FTO.bate1 = 3 * 90;
+	X_FTO.bate2 = 3* 90 * 90;
+	X_FTO.bate3 = 90 * 90 * 90;//35 * 50 * 50
+	X_FTO.l = -2/9;
+	X_FTO.m2 = 1 + 1 * X_FTO.l;
 	X_FTO.m3 = 1 + 2 * X_FTO.l;
 	X_FTO.m4 = 1 + 3 * X_FTO.l;
 
-	Y_FTO.b0 = 0.04;
-	Y_FTO.bate1 = 3 * 30;
-	Y_FTO.bate2 = 3*pow(30, 2);
-	Y_FTO.bate3 = pow(30, 3);
-	Y_FTO.l = -1/3;
-	Y_FTO.m2 = 1 + Y_FTO.l;
+	Y_FTO.b0 = 50;//12
+	Y_FTO.bate1 = 3 * 90;
+	Y_FTO.bate2 = 3* 90 * 90;
+	Y_FTO.bate3 = 90 * 90 * 90;
+	Y_FTO.l = -2/9;
+	Y_FTO.m2 = 1 + 1 * Y_FTO.l;
 	Y_FTO.m3 = 1 + 2 * Y_FTO.l;
 	Y_FTO.m4 = 1 + 3 * Y_FTO.l;
 }
@@ -54,6 +54,16 @@ void FTO_update(float dt, float u, float fb, struct FTO_2_TYPE * fto)
 	fto->x1 = dt * (fto->x2 + fto->bate1 * pow(fabs(err), fto->m2) * sign_s(err));
 	fto->x2 = dt * (fto->x3 + fto->bate2 * pow(fabs(err), fto->m3) * sign_s(err) + u * fto->b0);
 	fto->x3 = dt * fto->bate3 * pow(fabs(err), fto->m4) * sign_s(err);
+
+}
+
+void ESO_update(float dt, float u, float fb, struct FTO_2_TYPE * eso)
+{
+	double err = 0;
+	err = fb - eso->x1;
+	eso->x1 = dt * (eso->x2 + eso->bate1 * err);
+	eso->x2 = dt * (eso->x3 + eso->bate2 * err + u * eso->b0);
+	eso->x3 = dt * eso->bate3 * err;
 
 }
 
@@ -132,6 +142,12 @@ void ctrl_reset(struct ctrl_data_ty * ctrl_data)
 	ctrl_data->x_posi_ctrl.s_x_I = 0.0;
 	ctrl_data->y_posi_ctrl.s_y = 0.0;
 	ctrl_data->y_posi_ctrl.s_y_I = 0.0;
+	X_FTO.x1 = 0.0;
+	X_FTO.x2 = 0.0;
+	X_FTO.x3 = 0.0;
+	Y_FTO.x1 = 0.0;
+	Y_FTO.x2 = 0.0;
+	Y_FTO.x3 = 0.0;
 
 	OpFlowDataClear();
 }
@@ -359,7 +375,7 @@ void height_ctrl(struct ctrl_data_ty * body_ctrl,struct data_fusion_ty * body_da
 
 	//从遥控器获取期望高度
 	float exp_height_speed = remote_ctrl->throttle * 0.4;
-	if (fabs(remote_ctrl->throttle) < 0.01)  exp_height_speed = 0.0;
+	if (fabs(remote_ctrl->throttle) < 0.1)  exp_height_speed = 0.0;
 	height_ctrl->expect_height += exp_height_speed * dt;
 
 	if(global_data.flags.use_motioncap_data)
@@ -679,11 +695,12 @@ void STSMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_
 	x_posi_ctrl->s_x = c_x * x_err_lpf + 1*x_posi_ctrl->x_posi_err_d;
 	y_posi_ctrl->s_y = c_y * y_err_lpf + 1*y_posi_ctrl->y_posi_err_d;
 	
-	x_speed_ctrl->out_pitch = (1*x_posi_ctrl->expect_x_posi_dd - c_x*x_posi_ctrl->x_posi_err_d - f1_x * x_posi_ctrl->s_x_d - f2_x * x_posi_ctrl->s_x_I);// + X_FTO.x3 * X_FTO.b0);
-	y_speed_ctrl->out_roll  = (1*y_posi_ctrl->expect_y_posi_dd - c_y*y_posi_ctrl->y_posi_err_d - f1_y * y_posi_ctrl->s_y_d - f2_y * y_posi_ctrl->s_y_I);// + Y_FTO.x3 * Y_FTO.b0);
-
-	FTO_update(dt, x_speed_ctrl->out_pitch, getBodyPosition(MC_X), &X_FTO);
-	FTO_update(dt, y_speed_ctrl->out_roll,  getBodyPosition(MC_Y), &Y_FTO);
+	x_speed_ctrl->out_pitch = (1*x_posi_ctrl->expect_x_posi_dd - c_x*x_posi_ctrl->x_posi_err_d - f1_x * x_posi_ctrl->s_x_d - f2_x * x_posi_ctrl->s_x_I - X_FTO.x3 / X_FTO.b0);
+	y_speed_ctrl->out_roll  = (1*y_posi_ctrl->expect_y_posi_dd - c_y*y_posi_ctrl->y_posi_err_d - f1_y * y_posi_ctrl->s_y_d - f2_y * y_posi_ctrl->s_y_I - Y_FTO.x3 / Y_FTO.b0);
+	// FTO_update(dt, x_speed_ctrl->out_pitch, getBodyPosition(MC_X), &X_FTO););//
+	// FTO_update(dt, y_speed_ctrl->out_roll,  getBodyPosition(MC_Y), &Y_FTO);
+	// ESO_update(dt, x_speed_ctrl->out_pitch, getBodyPosition(MC_X), &X_FTO);
+	// ESO_update(dt, y_speed_ctrl->out_roll,  getBodyPosition(MC_Y), &Y_FTO);
 
 	x_speed_ctrl->out_pitch = LIMIT_R(x_speed_ctrl->out_pitch, -30.0, 30.0);
 	y_speed_ctrl->out_roll = -LIMIT_R(y_speed_ctrl->out_roll, -30.0,30.0);

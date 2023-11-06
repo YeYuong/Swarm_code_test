@@ -214,5 +214,6 @@ void STSMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_
 
 void FTO_init();
 void FTO_update(float dt, float u, float fb, struct FTO_2_TYPE * fto);
+void ESO_update(float dt, float u, float fb, struct FTO_2_TYPE * eso);
 
 #endif

@@ -46,6 +46,10 @@ void task_200hz(struct global_data_ty * p_global_data) {
     angle_ctrl(&(p_global_data->body_ctrl), &attitude_data, &(p_global_data->remote_ctrl), dt);
     
     ota_task();
+    ESO_update(dt, global_data.body_ctrl.x_speed_ctrl.out_pitch, getBodyPosition(MC_X), &X_FTO);
+	ESO_update(dt, global_data.body_ctrl.y_speed_ctrl.out_roll,  getBodyPosition(MC_Y), &Y_FTO);
+    // FTO_update(dt, global_data.body_ctrl.x_speed_ctrl.out_pitch, getBodyPosition(MC_X), &X_FTO);
+	// FTO_update(dt, global_data.body_ctrl.y_speed_ctrl.out_roll,  getBodyPosition(MC_Y), &Y_FTO);
 
 }
 

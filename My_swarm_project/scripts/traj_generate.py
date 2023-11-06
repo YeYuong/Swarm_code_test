@@ -9,7 +9,7 @@ from scipy.interpolate import interp1d
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 
-INTERV_TIME = 0.02
+INTERV_TIME = 0.03
 
 def generate_hoverline(head=[0,-1,0.2], tail=[0,1,0.2], number=3, hover_time=1, interv_time=INTERV_TIME):
     row_ = round(hover_time/interv_time)
@@ -179,19 +179,19 @@ if __name__ == "__main__":
     # waypoint1 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=2)
     # waypoint0to1 = generate_transition(waypoint0, waypoint1, speed=0.2)
     waypoint2 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
-    waypoint0to2 = generate_transition(waypoint0, waypoint2, speed=0.04)
+    waypoint0to2 = generate_transition(waypoint0, waypoint2, speed=0.02)
     waypoint3 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
-    waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.04)
+    waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.02)
     waypoints = np.vstack((waypoint0, waypoint0to2,
                            waypoint2, waypoint2to3,
                            waypoint3))
 #   自行编队方案2 绕圆一圈
-    # waypoint0 = generate_hovercircle(center=[0.0, 0.0, 0.2], radius=0.5, start_angle=90, hover_time=4)
+    # waypoint0 = generate_hovercircle(center=[0.0, 0.0, 0.2], radius=0.3, start_angle=90, hover_time=4)
     # # waypoint1 = generate_hovercircle(center=[0.0, 0.0, 0.5], radius=0.5, start_angle=90, hover_time=2)
     # # waypoint0to1 = generate_transition(waypoint0, waypoint1, speed=0.2)
-    # waypoint2 = generate_circle(center=[0.0, 0.0, 0.2], radius=0.5, end_height=0.2, loop=1, speed=0.2, start_angle=90)
+    # waypoint2 = generate_circle(center=[0.0, 0.0, 0.2], radius=0.3, end_height=0.2, loop=1, speed=0.02, start_angle=90)
     # # waypoint2 = generate_circle(center=[0.0, 0.0, 0.5], radius=0.5, end_height=0.2, loop=1, speed=0.2, start_angle=90)
-    # waypoint3 = generate_hovercircle(center=[0.0, 0.0, 0.2], start_angle=90, hover_time=2)
+    # waypoint3 = generate_hovercircle(center=[0.0, 0.0, 0.2], radius=0.3, start_angle=90, hover_time=2)
     # # waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.2)
     # waypoints = np.vstack((waypoint0,
     #                        waypoint2,
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     x_column = waypoints[:, 0]#提取第一列数据
 
     # 计算时间值
-    time_interval = 0.02 # 时间间隔为0.05秒
+    time_interval = 0.03 # 时间间隔为0.05秒
     time_values = np.arange(0, len(x_column) * time_interval, time_interval) - 1
 
     # 使用线性插值创建平滑曲线
@@ -236,6 +236,6 @@ if __name__ == "__main__":
             break
         for ii in range(3):
             show_pos_now(pub, [ctrl_waypoint[ii][tt][0], ctrl_waypoint[ii][tt][1], ctrl_waypoint[ii][tt][2]], ii)
-        time.sleep(0.05)
+        time.sleep(0.03)
 
     plt.show()

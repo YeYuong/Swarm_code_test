@@ -3,6 +3,7 @@ import numpy as np
 import time
 import std_msgs
 import matplotlib.pyplot as plt
+import threading
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from geometry_msgs.msg import Point
@@ -29,6 +30,15 @@ ob_x,ob_dis = 0.0,0.0
 # follower2_number = 3
 # follower2_mc_x,follow2_mc_y,follower2_mc_z = 0,0,0
 
+fol1_x_values = []
+fol1_y_values = []
+leader_x_values = []
+leader_y_values = []
+time_values = []
+expect_fol1_x, expect_fol1_y = 0.0, 0.0
+ 
+fol1_err_values_x = []
+fol1_err_values_y = []
 
 
 # 领航、跟随机ROS话题回调函数
@@ -38,6 +48,54 @@ def leader_posi_cb(msg):
     leader_mc_x = (msg.pose.position.x/1000)  # 领航机当前x位置,从毫米转化为米
     leader_mc_y = (msg.pose.position.y/1000)  # 领航机当前y位置
     leader_mc_z = (msg.pose.position.z/1000)  # 领航机当前z位置
+    # 获取当前时间戳
+    current_time = rospy.Time.now()
+    # 将时间戳转换为秒
+    time_in_seconds = (current_time - initial_time).to_sec()
+    # 添加时间戳和数据到列表
+    time_values.append(time_in_seconds)
+    leader_x_values.append(leader_mc_x)#领航机x,y坐标数据添加
+    leader_y_values.append(leader_mc_y)
+
+# 在程序执行完之后，将数据写入文件
+def save_data_to_file():
+    with open("ESO_ST.txt", "w") as file:
+        for i in range(len(time_values)):
+            file.write(f"{time_values[i]} {leader_x_values[i]} {leader_y_values[i]} {fol1_x_values[i]} {fol1_y_values[i]} {fol1_err_values_x[i]} {fol1_err_values_y[i]}\n")
+
+def plot_from_file():
+    x_values = []
+    y_values = []
+    time = []
+    with open("ESO_ST.txt", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            parts = line.split()
+            time.append(float(parts[0]))
+            x_values.append(float(parts[5]))
+            y_values.append(float(parts[6]))
+
+    # plt.plot(time, x_values, linestyle='-', color='b', label='Data 1')
+    # plt.plot(time, y_values, linestyle='-', color='r', label='Data 2')
+    plt.plot(time, x_values, linestyle='-', color='r', label='Data 1')
+    plt.plot(time, y_values, linestyle='-', color='r', label='Data 2')
+    plt.xlabel('Time (seconds)')
+    plt.ylabel('Position')
+    plt.title('Leader Position Over Time')
+    plt.legend()
+    plt.show()
+
+
+def leader_plot():
+    plt.ion()
+    plt.figure()
+    plt.xlabel('Time (seconds)')
+    plt.ylabel('Data')
+    plt.title('Time-Based Plot')
+    plt.plot(time_values, fol1_x_values, linestyle='-', color='b', label='Data1')
+    plt.plot(time_values, fol1_y_values, linestyle='-', color='r', label='Data2')
+    # plt.savefig("leader_x_circle_SMC.png")
+    plt.show()
 
 def follower1_posi_cb(msg):
     # 解析动捕数据
@@ -45,6 +103,13 @@ def follower1_posi_cb(msg):
     follower1_mc_x = (msg.pose.position.x/1000)
     follower1_mc_y = (msg.pose.position.y/1000)
     follower1_mc_z = (msg.pose.position.z/1000)
+    x_err = expect_fol1_x - follower1_mc_x 
+    y_err = expect_fol1_y - follower1_mc_y 
+
+    fol1_x_values.append(follower1_mc_x)
+    fol1_y_values.append(follower1_mc_y)
+    fol1_err_values_x.append(x_err)
+    fol1_err_values_y.append(y_err)
 
 def read_waypoint_data(path):
     data = np.loadtxt(path, dtype=np.float32)
@@ -231,23 +296,10 @@ def swarm_controller(dt):
 
 
 def goTrajactory(kuads, pub, traj_file):
-    ctrl_waypoints = read_waypoint_data(traj_file)
-    # data = np.loadtxt(traj_file, dtype=np.float32)
-    # fol1_data_x = np.zeros((ctrl_waypoints[0].shape[0] , 1), dtype=float)#跟随机X实际位置
-    # fol1_data_d_x = np.zeros((ctrl_waypoints[0].shape[0] , 1), dtype=float)#跟随机X期望位置
-    # fol1_data_x_err = np.zeros((ctrl_waypoints[0].shape[0] , 1), dtype=float)#编队控制器X误差
-    # fol1_data_ob_x = np.zeros((ctrl_waypoints[0].shape[0] , 1), dtype=float)#观测期望位置
-    # fol1_data_r_x = np.zeros((ctrl_waypoints[0].shape[0] , 1), dtype=float)#间距实际位置
-    # fol1_data_y = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)
-    # fol1_data_d_y = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)
-    # fol1_data_y_err = np.zeros((ctrl_waypoints[0].shape[0], 1), dtype=float)
-    
-    # #绘制曲线图形
-    # # x_column = data[:, 3]#提取第一列数据
-    # # 计算时间值
-    # time_interval = 0.05  # 时间间隔为0.05秒
-    # time_values = np.arange(0, len(data[:, 0]) * time_interval, time_interval)
 
+    global expect_fol1_x,expect_fol1_y
+    ctrl_waypoints = read_waypoint_data(traj_file)
+    
     # number = len(ctrl_waypoints)
     number = 1
     time.sleep(0.2)
@@ -264,30 +316,14 @@ def goTrajactory(kuads, pub, traj_file):
     print("\rtrajactory!")
     #给与目标点次数
     nb_waypoints = ctrl_waypoints[0].shape[0] 
-    # print(nb_waypoints)
-    # yy = -1
-    for tt in range(nb_waypoints):#领航机开始跟随期望轨迹飞行，重构控制器，将PID环放置于给点回路之内，原给点回路变为50Hz，现将PID环改为100HZ
-        # print(tt,end="\n")
+  
+    for tt in range(nb_waypoints):
         yy = tt 
         if rospy.is_shutdown():
             break
-        # if tt % 2 == 0:
-        # a = swarm_controller(dt = 0.05)#编队控制器,100Hz
-        # print(a[0],a[1],end="\n")
-        # fol1_data_x[yy, 0] = follower1_mc_x #实际位置
-        # fol1_data_d_x[yy, 0] = leader_mc_x - 0.4 #期望位置
-        # fol1_data_x_err[yy, 0] = 0.4 - leader_mc_x + follower1_mc_x
-        # fol1_data_ob_x[yy, 0] = ob_x 
-        # fol1_data_r_x[yy, 0] = r_x 
-        # fol1_data_y[tt, 0] = follower1_mc_y
-        # fol1_data_d_y[tt, 0] = follower1_mc_y - a
-        # fol1_data_y_err[tt, 0] = old_fol1_err_y
-        # print(follower1_mc_x,old_fol1_err_x,end="\n")
-        kuadmini_3.goto( leader_mc_x - 0.4, leader_mc_y - 0.4, ctrl_waypoints[0][yy][2])  
-        
-        # if tt % 2 == 0:#给点回路50Hz
-            # yy += 1
-        # print("gei dian","\n")
+        kuadmini_3.goto(ctrl_waypoints[agent_number][yy][0] - 0.4, ctrl_waypoints[agent_number][yy][1] - 0.4, ctrl_waypoints[0][yy][2])  
+        expect_fol1_x = ctrl_waypoints[agent_number][yy][0] - 0.4
+        expect_fol1_y = ctrl_waypoints[agent_number][yy][1] - 0.4
         for agent_number in range(number):
             try:
                 kuads[agent_number].goto(ctrl_waypoints[agent_number][yy][0], ctrl_waypoints[agent_number][yy][1], ctrl_waypoints[agent_number][yy][2])
@@ -295,7 +331,7 @@ def goTrajactory(kuads, pub, traj_file):
             except IndexError as e:
                 pass
             show_pos_now(pub, [ctrl_waypoints[agent_number][yy][0], ctrl_waypoints[agent_number][yy][1], ctrl_waypoints[agent_number][yy][2]], agent_number + 4)
-        time.sleep(0.02)
+        time.sleep(0.03)
     
     for agent_number in range(number):
         try:
@@ -304,21 +340,6 @@ def goTrajactory(kuads, pub, traj_file):
             pass
     kuadmini_3.land()
     time.sleep(1.5)
-
-     # 创建曲线图
-    # plt.figure(figsize=(8, 6))
-    # plt.plot(time_values, fol1_data_x, linestyle='-', color='b', label='Data1')  # 绘制原始曲线1
-    # plt.plot(time_values, fol1_data_d_x, linestyle='-', color='r', label='Data2')  # 绘制原始曲线2
-    # plt.plot(time_values, fol1_data_x_err, linestyle='-', color='g', label='Data3')  # 绘制原始曲线3
-    # # plt.plot(time_values, fol1_data_ob_x, linestyle='-', color=(0.5, 0.5, 0.5), label='Data4')  # 绘制原始曲线3
-    # # plt.plot(time_values, fol1_data_r_x, linestyle='-', color=(0.5, 0.0, 0.5), label='Data5')  # 绘制原始曲线3
-    # # plt.plot(smooth_time_values, smooth_first_column, color='r', label='Smooth Curve')  #绘制平滑曲线
-    # plt.xlabel('Time (seconds)')
-    # plt.ylabel('Vertical Distance (units)')
-    # plt.title('Smooth Vertical Distance vs. Time')
-    # plt.grid(True)
-    # plt.legend()
-    # plt.show()
 
 
 if __name__ == "__main__":
@@ -331,16 +352,17 @@ if __name__ == "__main__":
     addr_vofa=('127.0.0.1',1347)
     addr_kground=('127.0.0.1',2001) # 通过上位机转发
     rospy.init_node('kuadmini_swarm', anonymous=False, disable_signals=True)
+    initial_time = rospy.Time.now()
 
     # 订阅领航机动捕话题
     rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(leader_number),PoseStamped,leader_posi_cb)
     # 订阅跟随机1动捕话题
     rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
 
-    # kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
+    kuadmini_0 = Kuadmini(addr_kground, number=0, use_tcp=1)
     # kuadmini_1 = Kuadmini(addr_kground, number=1, use_tcp=1)
     # kuadmini_2 = Kuadmini(addr_kuadmini2, number=2, use_tcp=1)
-    kuadmini_3 = Kuadmini(addr_kground, number=3, use_tcp=1)
+    # kuadmini_3 = Kuadmini(addr_kground, number=3, use_tcp=1)
     # kuadmini_4 = Kuadmini(addr_kground, number=4, use_tcp=1)
     # kuadmini_k = Kuadmini(addr_kground, number=0, use_tcp=1)
 
@@ -349,8 +371,19 @@ if __name__ == "__main__":
     # goHover(kuadmini_k)# kuadmini_0, kuadmini_1, kuadmini_2,
     # goSwings((kuadmini_0,))
     # goTrajactory((kuadmini_0,), pub, "line1.txt")
+    
+    # save_data_to_file()#将数据存储
+    # leader_plot()
+    
+    # plot_from_file()
+    # 创建线程执行 goTrajactory 函数
+    # traj_thread = threading.Thread(target=goTrajactory, args=((kuadmini_0,), pub, "line1.txt"))
+    # plot_thread = threading.Thread(target=leader_plot)
 
-    while not rospy.is_shutdown():
-        time.sleep(1)
-        pass
+    # traj_thread.start()
+    # plot_thread.start()
+    # traj_thread.join()
+    # plot_thread.join()
+
+    rospy.spin()
 
