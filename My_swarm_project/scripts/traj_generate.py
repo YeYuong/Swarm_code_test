@@ -175,29 +175,29 @@ if __name__ == "__main__":
     #                        waypoint0))
     
 #   自行编队方案1 直线前进
-    waypoint0 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=4)
-    # waypoint1 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=2)
-    # waypoint0to1 = generate_transition(waypoint0, waypoint1, speed=0.2)
-    waypoint2 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
-    waypoint0to2 = generate_transition(waypoint0, waypoint2, speed=0.02)
-    waypoint3 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
-    waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.02)
-    waypoints = np.vstack((waypoint0, waypoint0to2,
-                           waypoint2, waypoint2to3,
-                           waypoint3))
-#   自行编队方案2 绕圆一圈
-    # waypoint0 = generate_hovercircle(center=[0.0, 0.0, 0.2], radius=0.3, start_angle=90, hover_time=4)
-    # # waypoint1 = generate_hovercircle(center=[0.0, 0.0, 0.5], radius=0.5, start_angle=90, hover_time=2)
+    # waypoint0 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=4)
+    # # waypoint1 = generate_hoverline([0, -1, 0.2], [0, 1, 0.2], hover_time=2)
     # # waypoint0to1 = generate_transition(waypoint0, waypoint1, speed=0.2)
-    # waypoint2 = generate_circle(center=[0.0, 0.0, 0.2], radius=0.3, end_height=0.2, loop=1, speed=0.02, start_angle=90)
-    # # waypoint2 = generate_circle(center=[0.0, 0.0, 0.5], radius=0.5, end_height=0.2, loop=1, speed=0.2, start_angle=90)
-    # waypoint3 = generate_hovercircle(center=[0.0, 0.0, 0.2], radius=0.3, start_angle=90, hover_time=2)
-    # # waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.2)
-    # waypoints = np.vstack((waypoint0,
-    #                        waypoint2,
+    # waypoint2 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
+    # waypoint0to2 = generate_transition(waypoint0, waypoint2, speed=0.02)
+    # waypoint3 = generate_hoverline([1, -1, 0.2], [1, 1, 0.2], hover_time=2)
+    # waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.02)
+    # waypoints = np.vstack((waypoint0, waypoint0to2,
+    #                        waypoint2, waypoint2to3,
     #                        waypoint3))
+#   自行编队方案2 绕圆一圈
+    waypoint0 = generate_hovercircle(center=[0.0, 0.0, 0.2], radius=0.3, start_angle=90, hover_time=4)
+    # waypoint1 = generate_hovercircle(center=[0.0, 0.0, 0.5], radius=0.5, start_angle=90, hover_time=2)
+    # waypoint0to1 = generate_transition(waypoint0, waypoint1, speed=0.2)
+    waypoint2 = generate_circle(center=[0.0, 0.0, 0.2], radius=0.3, end_height=0.2, loop=1, speed=0.02, start_angle=90)
+    # waypoint2 = generate_circle(center=[0.0, 0.0, 0.5], radius=0.5, end_height=0.2, loop=1, speed=0.2, start_angle=90)
+    waypoint3 = generate_hovercircle(center=[0.0, 0.0, 0.2], radius=0.3, start_angle=90, hover_time=2)
+    # waypoint2to3 = generate_transition(waypoint2, waypoint3, speed=0.2)
+    waypoints = np.vstack((waypoint0,
+                           waypoint2,
+                           waypoint3))
 
-    np.savetxt("line1.txt", waypoints, fmt="%.4f")
+    np.savetxt("circle.txt", waypoints, fmt="%.4f")
     
     #绘制图形
     x_column = waypoints[:, 0]#提取第一列数据
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # plt.show()
 
 
-    ctrl_waypoint = read_waypoint_data("line1.txt")
+    ctrl_waypoint = read_waypoint_data("circle.txt")
     # number = len(ctrl_waypoint)
     # print(number)
 

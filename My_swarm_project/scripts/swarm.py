@@ -36,9 +36,12 @@ leader_x_values = []
 leader_y_values = []
 time_values = []
 expect_fol1_x, expect_fol1_y = 0.0, 0.0
+expect_led_x, expect_led_y = 0.0, 0.0
  
 fol1_err_values_x = []
 fol1_err_values_y = []
+led_err_values_x = []
+led_err_values_y = []
 
 
 # 领航、跟随机ROS话题回调函数
@@ -48,6 +51,8 @@ def leader_posi_cb(msg):
     leader_mc_x = (msg.pose.position.x/1000)  # 领航机当前x位置,从毫米转化为米
     leader_mc_y = (msg.pose.position.y/1000)  # 领航机当前y位置
     leader_mc_z = (msg.pose.position.z/1000)  # 领航机当前z位置
+    led_x_err = expect_led_x - leader_mc_x 
+    led_y_err = expect_led_y - leader_mc_y 
     # 获取当前时间戳
     current_time = rospy.Time.now()
     # 将时间戳转换为秒
@@ -56,24 +61,28 @@ def leader_posi_cb(msg):
     time_values.append(time_in_seconds)
     leader_x_values.append(leader_mc_x)#领航机x,y坐标数据添加
     leader_y_values.append(leader_mc_y)
+    led_err_values_x.append(led_x_err)
+    led_err_values_y.append(led_y_err)
 
 # 在程序执行完之后，将数据写入文件
 def save_data_to_file():
-    with open("ESO_ST.txt", "w") as file:
+    with open("cir_ST4.txt", "w") as file:
         for i in range(len(time_values)):
             file.write(f"{time_values[i]} {leader_x_values[i]} {leader_y_values[i]} {fol1_x_values[i]} {fol1_y_values[i]} {fol1_err_values_x[i]} {fol1_err_values_y[i]}\n")
+            # file.write(f"{time_values[i]} {leader_x_values[i]} {leader_y_values[i]} {led_err_values_x[i]} {led_err_values_y[i]}\n")
+
 
 def plot_from_file():
     x_values = []
     y_values = []
     time = []
-    with open("ESO_ST.txt", "r") as file:
+    with open("cir_ST4.txt", "r") as file:
         lines = file.readlines()
         for line in lines:
             parts = line.split()
             time.append(float(parts[0]))
-            x_values.append(float(parts[5]))
-            y_values.append(float(parts[6]))
+            x_values.append(float(parts[3]))
+            y_values.append(float(parts[4]))
 
     # plt.plot(time, x_values, linestyle='-', color='b', label='Data 1')
     # plt.plot(time, y_values, linestyle='-', color='r', label='Data 2')
@@ -298,6 +307,7 @@ def swarm_controller(dt):
 def goTrajactory(kuads, pub, traj_file):
 
     global expect_fol1_x,expect_fol1_y
+    global expect_led_x,expect_led_y
     ctrl_waypoints = read_waypoint_data(traj_file)
     
     # number = len(ctrl_waypoints)
@@ -327,6 +337,8 @@ def goTrajactory(kuads, pub, traj_file):
         for agent_number in range(number):
             try:
                 kuads[agent_number].goto(ctrl_waypoints[agent_number][yy][0], ctrl_waypoints[agent_number][yy][1], ctrl_waypoints[agent_number][yy][2])
+                expect_led_x = ctrl_waypoints[agent_number][yy][0]
+                expect_led_y = ctrl_waypoints[agent_number][yy][1]
                 show_pos_now(pub, [kuads[agent_number].mc_x, kuads[agent_number].mc_y, kuads[agent_number].mc_z], agent_number)
             except IndexError as e:
                 pass
@@ -359,10 +371,10 @@ if __name__ == "__main__":
     # 订阅跟随机1动捕话题
     rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
 
-    kuadmini_0 = Kuadmini(addr_kground, number=0, use_tcp=1)
+    kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
     # kuadmini_1 = Kuadmini(addr_kground, number=1, use_tcp=1)
     # kuadmini_2 = Kuadmini(addr_kuadmini2, number=2, use_tcp=1)
-    # kuadmini_3 = Kuadmini(addr_kground, number=3, use_tcp=1)
+    kuadmini_3 = Kuadmini(addr_kuadmini3, number=3, use_tcp=1)
     # kuadmini_4 = Kuadmini(addr_kground, number=4, use_tcp=1)
     # kuadmini_k = Kuadmini(addr_kground, number=0, use_tcp=1)
 
@@ -371,11 +383,12 @@ if __name__ == "__main__":
     # goHover(kuadmini_k)# kuadmini_0, kuadmini_1, kuadmini_2,
     # goSwings((kuadmini_0,))
     # goTrajactory((kuadmini_0,), pub, "line1.txt")
+    # goTrajactory((kuadmini_0,), pub, "circle.txt")
     
     # save_data_to_file()#将数据存储
     # leader_plot()
     
-    # plot_from_file()
+    plot_from_file()
     # 创建线程执行 goTrajactory 函数
     # traj_thread = threading.Thread(target=goTrajactory, args=((kuadmini_0,), pub, "line1.txt"))
     # plot_thread = threading.Thread(target=leader_plot)

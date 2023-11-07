@@ -29,18 +29,18 @@ struct FTO_2_TYPE Y_FTO;
 void FTO_init()
 {
 	X_FTO.b0 = 50;//12
-	X_FTO.bate1 = 3 * 90;
-	X_FTO.bate2 = 3* 90 * 90;
-	X_FTO.bate3 = 90 * 90 * 90;//35 * 50 * 50
+	X_FTO.bate1 = 3 * 70;
+	X_FTO.bate2 = 3* 70 * 70;
+	X_FTO.bate3 = 70 * 70 * 70;//35 * 50 * 50
 	X_FTO.l = -2/9;
 	X_FTO.m2 = 1 + 1 * X_FTO.l;
 	X_FTO.m3 = 1 + 2 * X_FTO.l;
 	X_FTO.m4 = 1 + 3 * X_FTO.l;
 
 	Y_FTO.b0 = 50;//12
-	Y_FTO.bate1 = 3 * 90;
-	Y_FTO.bate2 = 3* 90 * 90;
-	Y_FTO.bate3 = 90 * 90 * 90;
+	Y_FTO.bate1 = 3 * 70;
+	Y_FTO.bate2 = 3* 70 * 70;
+	Y_FTO.bate3 = 70 * 70 * 70;
 	Y_FTO.l = -2/9;
 	Y_FTO.m2 = 1 + 1 * Y_FTO.l;
 	Y_FTO.m3 = 1 + 2 * Y_FTO.l;
@@ -671,7 +671,7 @@ void STSMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_
 	y_posi_ctrl->old_y_posi_err = y_err_lpf;
 
 	//一般二阶系统滑模面S
-	double lamda = -0.5;//在-1/2到0之间
+	double lamda = -0.49;//在-1/2到0之间
 	double c_x = 1;
 	double f1_x = 8;
 	double f2_x = 0.1;
@@ -695,8 +695,8 @@ void STSMC_xy_position_ctrl(struct ctrl_data_ty * body_ctrl, struct data_fusion_
 	x_posi_ctrl->s_x = c_x * x_err_lpf + 1*x_posi_ctrl->x_posi_err_d;
 	y_posi_ctrl->s_y = c_y * y_err_lpf + 1*y_posi_ctrl->y_posi_err_d;
 	
-	x_speed_ctrl->out_pitch = (1*x_posi_ctrl->expect_x_posi_dd - c_x*x_posi_ctrl->x_posi_err_d - f1_x * x_posi_ctrl->s_x_d - f2_x * x_posi_ctrl->s_x_I - X_FTO.x3 / X_FTO.b0);
-	y_speed_ctrl->out_roll  = (1*y_posi_ctrl->expect_y_posi_dd - c_y*y_posi_ctrl->y_posi_err_d - f1_y * y_posi_ctrl->s_y_d - f2_y * y_posi_ctrl->s_y_I - Y_FTO.x3 / Y_FTO.b0);
+	x_speed_ctrl->out_pitch = (1*x_posi_ctrl->expect_x_posi_dd - c_x*x_posi_ctrl->x_posi_err_d - f1_x * x_posi_ctrl->s_x_d - f2_x * x_posi_ctrl->s_x_I );//- X_FTO.x3 / X_FTO.b0);
+	y_speed_ctrl->out_roll  = (1*y_posi_ctrl->expect_y_posi_dd - c_y*y_posi_ctrl->y_posi_err_d - f1_y * y_posi_ctrl->s_y_d - f2_y * y_posi_ctrl->s_y_I );//- Y_FTO.x3 / Y_FTO.b0);
 	// FTO_update(dt, x_speed_ctrl->out_pitch, getBodyPosition(MC_X), &X_FTO););//
 	// FTO_update(dt, y_speed_ctrl->out_roll,  getBodyPosition(MC_Y), &Y_FTO);
 	// ESO_update(dt, x_speed_ctrl->out_pitch, getBodyPosition(MC_X), &X_FTO);
