@@ -1,13 +1,13 @@
-import rospy
+# import rospy
 import numpy as np
 import time
-import std_msgs
+# import std_msgs
 import matplotlib.pyplot as plt
 import threading
-from visualization_msgs.msg import Marker
-from geometry_msgs.msg import PoseStamped, TwistStamped
-from geometry_msgs.msg import Point
-from kuadmini import Kuadmini
+# from visualization_msgs.msg import Marker
+# from geometry_msgs.msg import PoseStamped, TwistStamped
+# from geometry_msgs.msg import Point
+# from kuadmini import Kuadmini
 
 # INTERV_TIME = 0.05
 
@@ -66,33 +66,139 @@ def leader_posi_cb(msg):
 
 # 在程序执行完之后，将数据写入文件
 def save_data_to_file():
-    with open("cir_ST4.txt", "w") as file:
+    with open("ST2.txt", "w") as file:
         for i in range(len(time_values)):
             file.write(f"{time_values[i]} {leader_x_values[i]} {leader_y_values[i]} {fol1_x_values[i]} {fol1_y_values[i]} {fol1_err_values_x[i]} {fol1_err_values_y[i]}\n")
             # file.write(f"{time_values[i]} {leader_x_values[i]} {leader_y_values[i]} {led_err_values_x[i]} {led_err_values_y[i]}\n")
 
 
 def plot_from_file():
-    x_values = []
-    y_values = []
+    leader_x_values = []
+    leader_y_values = []
+    fol1_x_values_st = []
+    fol1_y_values_st = []
+    fol1_x_values_smc = []
+    fol1_y_values_smc = []
+    fol2_x_values_st = []
+    fol2_y_values_st = []
+    fol2_x_values_smc = []
+    fol2_y_values_smc = []
     time = []
-    with open("cir_ST4.txt", "r") as file:
+    time1 = []
+    time2 = []
+    time3 = []
+    # with open("cir_ST2.txt", "r") as file:
+    with open("ST2.txt", "r") as file:
         lines = file.readlines()
         for line in lines:
             parts = line.split()
             time.append(float(parts[0]))
-            x_values.append(float(parts[3]))
-            y_values.append(float(parts[4]))
+            leader_x_values.append(float(parts[1]))
+            leader_y_values.append(float(parts[2]))
+            fol1_x_values_st.append(float(parts[3]))
+            fol1_y_values_st.append(float(parts[4]))
+    with open("ST3.txt", "r") as file:
+        len1 = file.readlines()
+        for line in len1:
+            parts = line.split()
+            time1.append(float(parts[0]))
+            fol2_x_values_st.append(float(parts[3]))
+            fol2_y_values_st.append(float(parts[4]) + 0.8)
+    # with open("cir_SMC1.txt", "r") as file:
+    with open("SMC2.txt", "r") as file:
+        len2 = file.readlines()
+        for line in len2:
+            parts = line.split()
+            time2.append(float(parts[0]))
+            fol1_x_values_smc.append(float(parts[3]))
+            fol1_y_values_smc.append(float(parts[4]))
+    # with open("cir_SMC2.txt", "r") as file:
+    with open("SMC4.txt", "r") as file:
+        len3 = file.readlines()
+        for line in len3:
+            parts = line.split()
+            time3.append(float(parts[0]))
+            fol2_x_values_smc.append(float(parts[3]))
+            fol2_y_values_smc.append(float(parts[4]) + 0.8)
+
+    # 创建一个包含三行两列的图形，总共五幅子图
+    fig, axs = plt.subplots(3, 2, figsize=(8, 8))
+    # 在第一个子图中绘制 data1
+    axs[0, 0].plot(time2, fol1_x_values_smc, '--',label='follower1(SMC)', color='blue')
+    axs[0, 0].plot(time3, fol2_x_values_smc, label='follower2(SMC)', color='red')
+    axs[0, 0].set_xlabel('time/s')
+    axs[0, 0].set_ylabel('X diatance/m')
+    axs[0, 0].set_title('a(1)')  # 添加标题
+    axs[0, 0].legend()
+    axs[0, 0].set_ylim([-0.7, 0.7])  # 设置 y 轴范围
+    # axs[0, 0].set_ylim([-0.8, 0.0])  # 设置 y 轴范围
+
+    # 在第二个子图中绘制 data2
+    axs[0, 1].plot(time, fol1_x_values_st, '--', label='follower1(CFC)', color='blue')
+    axs[0, 1].plot(time1, fol2_x_values_st, label='follower2(CFC)', color='red')
+    axs[0, 1].set_xlabel('time/s')
+    axs[0, 1].set_ylabel('X diatance/m')
+    axs[0, 1].set_title('b(1)')  # 添加标题
+    axs[0, 1].legend()
+    axs[0, 1].set_ylim([-0.7, 0.7])  # 设置 y 轴范围
+    # axs[0, 1].set_ylim([-0.8, 0.0])  # 设置 y 轴范围
+
+    # 在第三个子图中绘制 data3
+    axs[1, 0].plot(time2, fol1_y_values_smc, '--', label='follower1(SMC)', color='blue')
+    axs[1, 0].plot(time3, fol2_y_values_smc, label='follower2(SMC)', color='red')
+    axs[1, 0].set_xlabel('time/s')
+    axs[1, 0].set_ylabel('Y diatance/m')
+    axs[1, 0].set_title('a(2)')  # 添加标题
+    axs[1, 0].legend()
+    axs[1, 0].set_ylim([-0.5, 0.5])  # 设置 y 轴范围
+    # axs[1, 0].set_ylim([-0.9, 0.9])  # 设置 y 轴范围
+
+    # 在第四个子图中绘制 data4
+    axs[1, 1].plot(time, fol1_y_values_st, '--', label='follower1(CFC)', color='blue')
+    axs[1, 1].plot(time1, fol2_y_values_st, label='follower2(CFC)', color='red')
+    axs[1, 1].set_xlabel('time/s')
+    axs[1, 1].set_ylabel('Y diatance/m')
+    axs[1, 1].set_title('b(2)')  # 添加标题
+    axs[1, 1].legend()
+    axs[1, 1].set_ylim([-0.5, 0.5])  # 设置 y 轴范围
+    # axs[1, 1].set_ylim([-0.9, 0.9])  # 设置 y 轴范围
+
+    # 在第五个子图中绘制 data5
+    axs[2, 0].plot(time, leader_x_values, label='leader', color='black')
+    # axs[2, 0].plot(time3, fol2_x_values_smc, label='follower2(SMC)', color='red')
+    axs[2, 0].set_xlabel('time/s')
+    axs[2, 0].set_ylabel('X diatance/m')
+    axs[2, 0].set_title('c(1)')  # 添加标题
+    axs[2, 0].legend()
+    axs[2, 0].set_ylim([-0.3, 1.1])  # 设置 y 轴范围
+    # axs[2, 0].set_ylim([-0.4, 0.4])  # 设置 y 轴范围
+
+    # 第六个子图 data6
+    axs[2, 1].plot(time, leader_y_values, label='leader', color='black')
+    # axs[2, 0].plot(time3, fol2_x_values_smc, label='follower2(SMC)', color='red')
+    axs[2, 1].set_xlabel('time/s')
+    axs[2, 1].set_ylabel('Y diatance/m')
+    axs[2, 1].set_title('c(2)')  # 添加标题
+    axs[2, 1].legend()
+    axs[2, 1].set_ylim([-0.4, 0.4])  # 设置 y 轴范围
+
+    # 调整子图之间的间距
+    plt.tight_layout()
+
+    # 显示图形
+    # plt.show()
+    # 保存图形
+    plt.savefig('line_swarm.png')  # 指定文件名和文件格式，例如 PNG
 
     # plt.plot(time, x_values, linestyle='-', color='b', label='Data 1')
     # plt.plot(time, y_values, linestyle='-', color='r', label='Data 2')
-    plt.plot(time, x_values, linestyle='-', color='r', label='Data 1')
-    plt.plot(time, y_values, linestyle='-', color='r', label='Data 2')
-    plt.xlabel('Time (seconds)')
-    plt.ylabel('Position')
-    plt.title('Leader Position Over Time')
-    plt.legend()
-    plt.show()
+    # plt.plot(time, x_values, linestyle='-', color='r', label='Data 1')
+    # plt.plot(time, y_values, linestyle='-', color='r', label='Data 2')
+    # plt.xlabel('Time (seconds)')
+    # plt.ylabel('Position')
+    # plt.title('Leader Position Over Time')
+    # plt.legend()
+    # plt.show()
 
 
 def leader_plot():
@@ -363,22 +469,22 @@ if __name__ == "__main__":
     addr_kuadmini4=('192.168.0.164',1000) # 直连地址
     addr_vofa=('127.0.0.1',1347)
     addr_kground=('127.0.0.1',2001) # 通过上位机转发
-    rospy.init_node('kuadmini_swarm', anonymous=False, disable_signals=True)
-    initial_time = rospy.Time.now()
+    # rospy.init_node('kuadmini_swarm', anonymous=False, disable_signals=True)
+    # initial_time = rospy.Time.now()
 
     # 订阅领航机动捕话题
-    rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(leader_number),PoseStamped,leader_posi_cb)
+    # rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(leader_number),PoseStamped,leader_posi_cb)
     # 订阅跟随机1动捕话题
-    rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
+    # rospy.Subscriber('/vrpn_client_node/MCServer/{}/pose'.format(follower1_number),PoseStamped,follower1_posi_cb)
 
-    kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
+    # kuadmini_0 = Kuadmini(addr_kuadmini0, number=0, use_tcp=1)
     # kuadmini_1 = Kuadmini(addr_kground, number=1, use_tcp=1)
     # kuadmini_2 = Kuadmini(addr_kuadmini2, number=2, use_tcp=1)
-    kuadmini_3 = Kuadmini(addr_kuadmini3, number=3, use_tcp=1)
+    # kuadmini_3 = Kuadmini(addr_kuadmini3, number=3, use_tcp=1)
     # kuadmini_4 = Kuadmini(addr_kground, number=4, use_tcp=1)
     # kuadmini_k = Kuadmini(addr_kground, number=0, use_tcp=1)
 
-    pub = rospy.Publisher("traj_show", Marker, queue_size=10)
+    # pub = rospy.Publisher("traj_show", Marker, queue_size=10)
 
     # goHover(kuadmini_k)# kuadmini_0, kuadmini_1, kuadmini_2,
     # goSwings((kuadmini_0,))
@@ -398,5 +504,5 @@ if __name__ == "__main__":
     # traj_thread.join()
     # plot_thread.join()
 
-    rospy.spin()
+    # rospy.spin()
 
